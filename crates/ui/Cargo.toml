@@ -1,0 +1,17 @@
+[package]
+name = "ui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+ratatui = { workspace = true }
+crossterm = { workspace = true }
+corvus-core = { path = "../corvus-core" }
+utils = { path = "../utils" }
+log = { workspace = true }
+humansize = { workspace = true }
+chrono = { version = "0.4", features = ["serde"] }
+users = "0.11.0"
+
+[features]
+mounts = []
