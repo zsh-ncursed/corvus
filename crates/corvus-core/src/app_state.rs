@@ -90,6 +90,12 @@ pub enum PreviewContent {
     Binary,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub enum RightPaneView {
+    Preview,
+    Terminal,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TabState {
     pub id: usize,
@@ -100,6 +106,7 @@ pub struct TabState {
     pub preview_content: Option<PreviewContent>,
     pub preview_scroll: (u16, u16),
     pub selected_entries: HashSet<PathBuf>,
+    pub right_pane_view: RightPaneView,
 }
 
 impl TabState {
@@ -113,6 +120,7 @@ impl TabState {
             preview_content: None,
             preview_scroll: (0, 0),
             selected_entries: HashSet::new(),
+            right_pane_view: RightPaneView::Preview,
         }
     }
 
@@ -287,7 +295,6 @@ pub struct AppState {
     #[serde(skip)]
     pub task_manager: TaskManager,
     pub clipboard: Clipboard,
-    pub show_terminal: bool,
     pub show_hidden_files: bool, // Re-add this
     #[serde(skip)]
     pub focus: FocusBlock,
@@ -378,7 +385,6 @@ impl AppState {
             show_tabs: false, // Hidden by default with one tab
             task_manager: TaskManager::new(),
             clipboard: Clipboard::new(),
-            show_terminal: false,
             show_hidden_files: false,
             focus: FocusBlock::Middle,
             xdg_dirs,
@@ -694,10 +700,6 @@ impl AppState {
                 self.show_tabs = false; // Hide tabs when only one is left
             }
         }
-    }
-
-    pub fn toggle_terminal(&mut self) {
-        self.show_terminal = !self.show_terminal;
     }
 
     pub fn add_bookmark(&mut self) {

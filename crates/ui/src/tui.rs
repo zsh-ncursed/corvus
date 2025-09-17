@@ -5,7 +5,7 @@ use crossterm::{
 };
 use ratatui::prelude::{CrosstermBackend, Terminal};
 use std::io::{self, stdout, Stdout};
-use corvus_core::app_state::{AppState, InputMode, CreateFileType};
+use corvus_core::app_state::{AppState, InputMode, CreateFileType, RightPaneView};
 
 pub struct Tui {
     pub terminal: Terminal<CrosstermBackend<Stdout>>,
@@ -32,10 +32,11 @@ impl Tui {
 
 /// Handles key presses and returns `false` if the app should quit.
 pub fn handle_key_press(key: KeyEvent, app_state: &mut AppState) -> bool {
-    // The terminal is activated by pressing Ctrl+`. This is handled in the global keybindings.
-    if app_state.show_terminal {
-        if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('`') {
-            app_state.toggle_terminal();
+    let active_tab_view = app_state.get_active_tab().right_pane_view.clone();
+
+    if active_tab_view == RightPaneView::Terminal {
+        if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('t') {
+            app_state.get_active_tab_mut().right_pane_view = RightPaneView::Preview;
             return true;
         }
 
@@ -96,8 +97,13 @@ pub fn handle_key_press(key: KeyEvent, app_state: &mut AppState) -> bool {
                 app_state.next_tab();
                 return true;
             }
-            KeyCode::Char('`') => {
-                app_state.toggle_terminal();
+            KeyCode::Char('t') => {
+                let active_tab = app_state.get_active_tab_mut();
+                if active_tab.right_pane_view == RightPaneView::Preview {
+                    active_tab.right_pane_view = RightPaneView::Terminal;
+                } else {
+                    active_tab.right_pane_view = RightPaneView::Preview;
+                }
                 return true;
             }
             KeyCode::Char('j') => {
