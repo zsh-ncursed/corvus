@@ -35,6 +35,7 @@ pub enum FocusBlock {
     Xdg,
     Bookmarks,
     Disks,
+    Terminal,
 }
 
 use std::time::SystemTime;
@@ -502,6 +503,7 @@ impl AppState {
             FocusBlock::Bookmarks => FocusBlock::Disks,
             FocusBlock::Disks => FocusBlock::Middle,
             FocusBlock::Middle => FocusBlock::Xdg,
+            FocusBlock::Terminal => FocusBlock::Middle,
         };
     }
 
@@ -523,6 +525,7 @@ impl AppState {
                 }
             },
             FocusBlock::Middle => {}, // Should not happen
+            FocusBlock::Terminal => {}, // Should not happen
         }
         self.update_middle_pane_from_left_pane_selection();
     }
@@ -542,6 +545,7 @@ impl AppState {
                 }
             },
             FocusBlock::Middle => {}, // Should not happen
+            FocusBlock::Terminal => {}, // Should not happen
         }
         self.update_middle_pane_from_left_pane_selection();
     }
@@ -561,6 +565,7 @@ impl AppState {
                 }
             },
             FocusBlock::Middle => None, // No-op
+            FocusBlock::Terminal => None, // No-op
         };
 
         if let Some(path) = path {
