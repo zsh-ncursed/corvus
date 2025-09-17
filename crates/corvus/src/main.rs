@@ -1,11 +1,13 @@
 use anyhow::Result;
 use crossterm::event::{Event, EventStream, KeyEventKind};
 use futures::StreamExt;
-use corvus_core::app_state::AppState;
+use corvus_core::app_state::{AppState, TerminalState};
 use std::time::Duration;
 use tokio::time::interval;
 use ui::tui::{self, Tui};
-
+use portable_pty::{CommandBuilder, NativePtySystem, PtySize, PtySystem};
+use std::io::{Read};
+use tokio::sync::mpsc;
 fn setup_logger() -> Result<(), fern::InitError> {
     fern::Dispatch::new()
         .format(|out, message, record| {
@@ -26,15 +28,58 @@ fn setup_logger() -> Result<(), fern::InitError> {
 struct App {
     app_state: AppState,
     tui: Tui,
+    terminal_rx: mpsc::Receiver<String>,
 }
 
 impl App {
     fn new() -> Result<Self> {
-        let app_state = AppState::new();
+        let mut app_state = AppState::new();
         let tui = Tui::new()?;
+
+        let (terminal_tx, terminal_rx) = mpsc::channel(100);
+
+        let pty_system = NativePtySystem::default();
+        let pair = pty_system.openpty(PtySize {
+            rows: 9,
+            cols: 80,
+            ..Default::default()
+        })?;
+
+        let shell = std::env::var("SHELL").unwrap_or_else(|_| "bash".to_string());
+        let cmd = CommandBuilder::new(shell);
+        let _child = pair.slave.spawn_command(cmd)?;
+
+        let mut pty_reader = pair.master.try_clone_reader()?;
+
+        tokio::spawn(async move {
+            let mut buf = [0u8; 8192];
+            loop {
+                match pty_reader.read(&mut buf) {
+                    Ok(count) => {
+                        if count > 0 {
+                            let s = String::from_utf8_lossy(&buf[..count]).to_string();
+                            if terminal_tx.send(s).await.is_err() {
+                                break;
+                            }
+                        } else {
+                            break;
+                        }
+                    }
+                    Err(_) => break,
+                }
+            }
+        });
+
+        let terminal_state = TerminalState {
+            pty_writer: pair.master,
+            lines: Vec::new(),
+        };
+        app_state.terminal = Some(terminal_state);
+
         Ok(Self {
             app_state,
             tui,
+            terminal_rx,
         })
     }
 
@@ -95,6 +140,11 @@ impl App {
                         let show_hidden = self.app_state.show_hidden_files;
                         self.app_state.get_active_tab_mut().update_entries(show_hidden);
                         self.app_state.update_mounts(); // Also update mounts after a task completes
+                    }
+                }
+                Some(s) = self.terminal_rx.recv() => {
+                    if let Some(terminal) = &mut self.app_state.terminal {
+                        terminal.lines.extend(s.lines().map(String::from));
                     }
                 }
             }

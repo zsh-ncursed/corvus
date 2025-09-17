@@ -32,6 +32,54 @@ impl Tui {
 
 /// Handles key presses and returns `false` if the app should quit.
 pub fn handle_key_press(key: KeyEvent, app_state: &mut AppState) -> bool {
+    // The terminal is activated by pressing Ctrl+`. This is handled in the global keybindings.
+    if app_state.show_terminal {
+        if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('`') {
+            app_state.toggle_terminal();
+            return true;
+        }
+
+        if let Some(terminal) = &mut app_state.terminal {
+            let mut bytes = Vec::new();
+            match key.code {
+                KeyCode::Char(c) => {
+                    bytes.extend_from_slice(c.to_string().as_bytes());
+                }
+                KeyCode::Enter => {
+                    bytes.push(b'\r');
+                }
+                KeyCode::Backspace => {
+                    bytes.push(8); // Backspace character
+                }
+                KeyCode::Left => {
+                    bytes.extend_from_slice(b"\x1b[D");
+                }
+                KeyCode::Right => {
+                    bytes.extend_from_slice(b"\x1b[C");
+                }
+                KeyCode::Up => {
+                    bytes.extend_from_slice(b"\x1b[A");
+                }
+                KeyCode::Down => {
+                    bytes.extend_from_slice(b"\x1b[B");
+                }
+                KeyCode::Tab => {
+                    bytes.push(b'\t');
+                }
+                _ => {}
+            }
+            if !bytes.is_empty() {
+                use std::io::Write;
+                if let Ok(mut writer) = terminal.pty_writer.as_mut().take_writer() {
+                    if let Err(e) = writer.write_all(&bytes) {
+                        log::error!("Failed to write to pty: {}", e);
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     // Global keybindings
     if key.modifiers.contains(KeyModifiers::CONTROL) {
         match key.code {
