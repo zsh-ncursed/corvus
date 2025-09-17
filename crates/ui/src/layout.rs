@@ -3,7 +3,6 @@ use ratatui::{
     prelude::{Constraint, Direction, Layout, Rect, Style},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
     Frame,
-    text::{Line},
 };
 use corvus_core::app_state::{AppState, CreateFileType, InputMode};
 use corvus_core::clipboard::ClipboardMode;
@@ -106,7 +105,7 @@ fn render_normal_layout(frame: &mut Frame, app_state: &AppState, color_scheme: &
     middle_pane::render_middle_pane(frame, middle_pane_inner_area, active_tab, color_scheme);
 
     // Right Pane
-    right_pane::render_right_pane(frame, right_pane_area, active_tab, color_scheme);
+    right_pane::render_right_pane(frame, right_pane_area, app_state, color_scheme);
 
     // --- Footer (Tasks, Info) ---
     let footer_chunks = Layout::default()
@@ -117,11 +116,7 @@ fn render_normal_layout(frame: &mut Frame, app_state: &AppState, color_scheme: &
         ])
         .split(footer_area);
 
-    if app_state.show_terminal {
-        render_terminal(frame, footer_chunks[0], app_state, color_scheme);
-    } else {
-        render_tasks_footer(frame, footer_chunks[0], app_state, color_scheme);
-    }
+    render_tasks_footer(frame, footer_chunks[0], app_state, color_scheme);
     render_info_panel(frame, footer_chunks[1], app_state, color_scheme);
 
     if app_state.show_confirmation {
@@ -250,23 +245,6 @@ fn render_tasks_footer(frame: &mut Frame, area: Rect, app_state: &AppState, colo
     let task_list = List::new(task_items);
 
     frame.render_widget(task_list, inner_area);
-}
-
-fn render_terminal(frame: &mut Frame, area: Rect, app_state: &AppState, color_scheme: &ColorScheme) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .title("Terminal")
-        .style(Style::default()
-            .fg(color_scheme.text_color())
-            .bg(color_scheme.background()));
-    let inner_area = block.inner(area);
-    frame.render_widget(block.clone(), area);
-
-    if let Some(terminal_state) = &app_state.terminal {
-        let lines: Vec<Line> = terminal_state.lines.iter().map(|s| Line::from(s.as_str())).collect();
-        let paragraph = Paragraph::new(lines);
-        frame.render_widget(paragraph, inner_area);
-    }
 }
 
 fn render_info_panel(frame: &mut Frame, area: Rect, app_state: &AppState, color_scheme: &ColorScheme) {

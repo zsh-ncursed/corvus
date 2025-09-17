@@ -4,7 +4,7 @@ use ratatui::{
     widgets::{Block, Borders, List, ListItem, Paragraph},
     Frame,
 };
-use corvus_core::app_state::{PreviewContent, TabState};
+use corvus_core::app_state::{AppState, PreviewContent, RightPaneView};
 use corvus_core::settings::ColorScheme;
 use utils::icons::{get_color_for_file, get_icon_for_file, IconColor};
 
@@ -21,7 +21,37 @@ fn to_ratatui_color(icon_color: IconColor) -> ratatui::prelude::Color {
     }
 }
 
-pub fn render_right_pane(frame: &mut Frame, area: Rect, tab_state: &TabState, color_scheme: &ColorScheme) {
+pub fn render_right_pane(frame: &mut Frame, area: Rect, app_state: &AppState, color_scheme: &ColorScheme) {
+    let active_tab = app_state.get_active_tab();
+
+    match active_tab.right_pane_view {
+        RightPaneView::Preview => {
+            render_preview_pane(frame, area, active_tab, color_scheme);
+        }
+        RightPaneView::Terminal => {
+            render_terminal_pane(frame, area, app_state, color_scheme);
+        }
+    }
+}
+
+fn render_terminal_pane(frame: &mut Frame, area: Rect, app_state: &AppState, color_scheme: &ColorScheme) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .title("Terminal")
+        .style(Style::default()
+            .fg(color_scheme.text_color())
+            .bg(color_scheme.background()));
+    let inner_area = block.inner(area);
+    frame.render_widget(block.clone(), area);
+
+    if let Some(terminal_state) = &app_state.terminal {
+        let lines: Vec<Line> = terminal_state.lines.iter().map(|s| Line::from(s.as_str())).collect();
+        let paragraph = Paragraph::new(lines);
+        frame.render_widget(paragraph, inner_area);
+    }
+}
+
+fn render_preview_pane(frame: &mut Frame, area: Rect, tab_state: &corvus_core::app_state::TabState, color_scheme: &ColorScheme) {
     let block = Block::default()
         .borders(Borders::ALL)
         .title("Preview")
