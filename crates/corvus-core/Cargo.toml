@@ -17,9 +17,10 @@ chrono = { version = "0.4", features = ["serde"] }
 humansize = { workspace = true }
 users = "0.11.0"
 utils = { path = "../utils" }
-serde = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 ratatui = { workspace = true }
+toml = { workspace = true }
 
 [dev-dependencies]
 tempdir = { workspace = true }

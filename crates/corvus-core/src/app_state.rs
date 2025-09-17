@@ -5,6 +5,7 @@ use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
+use crate::plugin::{self, Plugin};
 use crate::task_manager::{TaskManager, TaskKind};
 use humansize::{format_size, BINARY};
 use crate::clipboard::{Clipboard, ClipboardMode};
@@ -325,6 +326,8 @@ pub struct AppState {
     pub search_results: Vec<DirEntry>,
     pub search_cursor: usize,
     pub archive_format: String,
+    #[serde(skip)]
+    pub plugins: Vec<Plugin>,
 }
 
 #[derive(Debug)]
@@ -400,6 +403,7 @@ impl AppState {
             search_results: Vec::new(),
             search_cursor: 0,
             archive_format: "zip".to_string(),
+            plugins: plugin::discover_plugins(),
         };
 
         // Попытка загрузить сохраненную сессию

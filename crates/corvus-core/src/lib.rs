@@ -4,3 +4,4 @@ pub mod clipboard;
 pub mod search;
 pub mod settings;
 pub mod session;
+pub mod plugin;
