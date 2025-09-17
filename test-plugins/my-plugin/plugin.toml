@@ -1,0 +1,4 @@
+name = "My Awesome Plugin"
+author = "Jules"
+version = "0.1.0"
+description = "A plugin that does awesome things."

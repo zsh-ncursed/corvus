@@ -259,6 +259,7 @@ dependencies = [
  "serde_json",
  "tempdir",
  "tokio",
+ "toml",
  "users",
  "utils",
  "uuid",

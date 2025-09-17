@@ -56,6 +56,7 @@ impl SettingsState {
             "Закладки",
             "Поиск",
             "Горячие клавиши",
+            "Плагины",
         ]
     }
     
@@ -85,8 +86,8 @@ impl SettingsState {
     }
     
     /// Переместить выбор элемента вниз
-    pub fn move_item_down(&mut self) {
-        let item_count = self.get_current_category_item_count();
+    pub fn move_item_down(&mut self, app_state: &AppState) {
+        let item_count = self.get_current_category_item_count(app_state);
         if self.selected_item < item_count - 1 {
             self.selected_item += 1;
             self.items_state.select(Some(self.selected_item));
@@ -94,7 +95,7 @@ impl SettingsState {
     }
     
     /// Переместить выбор элемента вверх
-    pub fn move_item_up(&mut self) {
+    pub fn move_item_up(&mut self, app_state: &AppState) {
         if self.selected_item > 0 {
             self.selected_item -= 1;
             self.items_state.select(Some(self.selected_item));
@@ -102,7 +103,7 @@ impl SettingsState {
     }
     
     /// Получить количество элементов в текущей категории
-    fn get_current_category_item_count(&self) -> usize {
+    fn get_current_category_item_count(&self, app_state: &AppState) -> usize {
         match self.selected_category {
             0 => 5, // Интерфейс
             1 => ColorScheme::all().len(), // Цветовые схемы
@@ -112,6 +113,7 @@ impl SettingsState {
             5 => 1, // Закладки
             6 => 2, // Поиск
             7 => 1, // Горячие клавиши
+            8 => app_state.plugins.len().max(1), // Плагины
             _ => 0,
         }
     }
@@ -144,6 +146,12 @@ impl SettingsState {
                     let selected_scheme = all_schemes[self.selected_item].clone();
                     // Обновляем цветовую схему в конфигурации приложения
                     app_state.set_color_scheme(selected_scheme);
+                }
+            }
+            8 => {
+                // Плагины
+                if let Some(plugin) = app_state.plugins.get_mut(self.selected_item) {
+                    plugin.enabled = !plugin.enabled;
                 }
             }
             _ => {}
@@ -381,6 +389,29 @@ fn render_category_details(frame: &mut Frame, area: Rect, settings_state: &mut S
                         .bg(color_scheme.background())),
             ]
         }
+        8 => {
+            if app_state.plugins.is_empty() {
+                vec![ListItem::new("No plugins found.").style(
+                    Style::default()
+                        .fg(color_scheme.text_color())
+                        .bg(color_scheme.background()),
+                )]
+            } else {
+                app_state
+                    .plugins
+                    .iter()
+                    .map(|plugin| {
+                        let marker = if plugin.enabled { "•" } else { " " };
+                        let text = format!("[{}] {}", marker, plugin.manifest.name);
+                        ListItem::new(text).style(
+                            Style::default()
+                                .fg(color_scheme.text_color())
+                                .bg(color_scheme.background()),
+                        )
+                    })
+                    .collect()
+            }
+        }
         _ => vec![ListItem::new("Выберите категорию")
             .style(Style::default()
                 .fg(color_scheme.text_color())
@@ -458,7 +489,7 @@ pub fn handle_settings_key(key_code: crossterm::event::KeyCode, app_state: &mut 
                             settings_state.move_down();
                         }
                         SettingsNavigationMode::Items => {
-                            settings_state.move_item_down();
+                            settings_state.move_item_down(app_state);
                         }
                     }
                 }
@@ -468,9 +499,18 @@ pub fn handle_settings_key(key_code: crossterm::event::KeyCode, app_state: &mut 
                             settings_state.move_up();
                         }
                         SettingsNavigationMode::Items => {
-                            settings_state.move_item_up();
+                            settings_state.move_item_up(app_state);
                         }
                     }
+                }
+                crossterm::event::KeyCode::Char('l') => {
+                    settings_state.navigation_mode = SettingsNavigationMode::Items;
+                }
+                crossterm::event::KeyCode::Char('h') => {
+                    settings_state.navigation_mode = SettingsNavigationMode::Categories;
+                }
+                crossterm::event::KeyCode::Tab => {
+                    settings_state.toggle_navigation_mode();
                 }
                 crossterm::event::KeyCode::Enter => {
                     // Если выбрана категория "Горячие клавиши", показываем полный список
