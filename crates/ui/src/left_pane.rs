@@ -1,5 +1,5 @@
 use ratatui::{
-    prelude::{Rect, Frame, Style, Span, Constraint, Direction, Layout, Modifier},
+    prelude::{Rect, Frame, Style, Span, Constraint, Direction, Layout},
     widgets::{block::Title, Block, Borders, List, ListItem, ListState},
 };
 use corvus_core::app_state::{AppState, FocusBlock};

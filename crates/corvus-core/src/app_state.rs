@@ -16,6 +16,17 @@ use log;
 use crate::search::{SearchEngine, SearchMode};
 #[cfg(feature = "mounts")]
 use proc_mounts::MountIter;
+use portable_pty::MasterPty;
+pub struct TerminalState {
+    pub pty_writer: Box<dyn MasterPty + Send>,
+    pub lines: Vec<String>,
+}
+
+impl std::fmt::Debug for TerminalState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("TerminalState").finish()
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, Default)]
 pub enum FocusBlock {
@@ -328,6 +339,8 @@ pub struct AppState {
     pub archive_format: String,
     #[serde(skip)]
     pub plugins: Vec<Plugin>,
+    #[serde(skip)]
+    pub terminal: Option<TerminalState>,
 }
 
 #[derive(Debug)]
@@ -404,6 +417,7 @@ impl AppState {
             search_cursor: 0,
             archive_format: "zip".to_string(),
             plugins: plugin::discover_plugins(),
+            terminal: None,
         };
 
         // Попытка загрузить сохраненную сессию
