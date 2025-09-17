@@ -129,5 +129,3 @@
 [2025-09-16][16:38:22][rtfm_core::app_state][INFO] Загружена сохраненная сессия
 [2025-09-16][16:39:36][app][INFO] Session saved successfully
 [2025-09-16][16:39:36][app][INFO] Application shutting down
-[2025-09-17][15:51:55][corvus][INFO] Application starting up
-[2025-09-17][15:51:55][corvus_core::app_state][INFO] Нет сохраненной сессии, создается новая

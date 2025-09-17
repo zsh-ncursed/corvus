@@ -37,7 +37,6 @@ pub fn handle_key_press(key: KeyEvent, app_state: &mut AppState) -> bool {
     if active_tab_view == RightPaneView::Terminal {
         if key.modifiers.contains(KeyModifiers::CONTROL) && key.code == KeyCode::Char('t') {
             app_state.get_active_tab_mut().right_pane_view = RightPaneView::Preview;
-            app_state.focus = FocusBlock::Middle;
             return true;
         }
 
@@ -102,10 +101,8 @@ pub fn handle_key_press(key: KeyEvent, app_state: &mut AppState) -> bool {
                 let active_tab = app_state.get_active_tab_mut();
                 if active_tab.right_pane_view == RightPaneView::Preview {
                     active_tab.right_pane_view = RightPaneView::Terminal;
-                    app_state.focus = FocusBlock::Terminal;
                 } else {
                     active_tab.right_pane_view = RightPaneView::Preview;
-                    app_state.focus = FocusBlock::Middle;
                 }
                 return true;
             }
